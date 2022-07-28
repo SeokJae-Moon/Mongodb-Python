@@ -1,0 +1,181 @@
+# MongoDB 설치
+ 1. https://www.mongodb.com/try/download/community
+    - 다운로드 및 설치: mongodb-windows-x86_64-6.0.0-signed.msi 
+    - 윈도우 시스템환경변수: path에 경로 추가 -> C:\Program Files\MongoDB\Server\6.0\bin
+    - cmd창에서 mongod --version 실행
+    - C:\Data\db 폴더 생성
+    
+ 2. https://www.mongodb.com/try/download/compass
+    - 다운로드및 설치: mongodb-compass-1.32.5-win32-x64.exe
+    
+ 3. MongoDB 실행
+    - cmd 창에서 mongod.exe 실행
+    - mongodb-compass 실행: Collection 추가
+    
+ 4. VSCODE 터미널에서 pip install pymongo 설치
+ 5. mongodb-compass -> test-db를 생성.
+ 6. 아래 코드 실행
+ 
+# Code 1: 기본적인 몽고디비에 데이터 추가 및 확인
+ from pymongo import MongoClient
+
+ client = MongoClient("mongodb://localhost:27017/")
+ db = client['test-db']
+
+ #print(client.list_database_names())
+
+ # data = {
+ #     'author' : 'moon',
+ #     'text' : 'mongoDB is first',
+ #     'tags' : ['kwangwoon', 'python', 'pymongo']
+ # }
+
+ # dbInsert = db.posts.insert_one(data)
+ # print('몽고디비입력완료')
+
+ # for d in db['posts'].find():
+ #     print(d['author'], d['text'], d['tags'])
+
+ # print()
+ # print(db.posts.find_one({'author':'moon'})['text'])
+
+ # print()
+ for d in db['posts'].find({}, {'test':0}):
+     print(d)
+
+# Code 2: 몽고디비에 추가 이후, 데이터 변경 코드
+ from pymongo import MongoClient
+
+ client = MongoClient("mongodb://localhost:27017/")
+ db = client['test-db']
+
+ # data = {
+ #      'author' : 'lee',
+ #      'text' : 'Who are you?',
+ #  }
+ # dpInsert = db.posts.insert_one(data)
+
+ db['posts'].update_one(
+      {'author':'lee', 'text':'Who are you?' },
+      {'$set':{'author':'Lee', 'address':'Busan' }}
+ )
+ 
+ # Code 3: 회원관리코드
+ import os
+import sys
+from pymongo import MongoClient
+
+def mydbConn():
+    client = MongoClient("mongodb://localhost:27017/")
+    return client['test-db']
+
+def screen():
+    print("\n### 간단한 회원 관리 프로그램 ###")
+    print("0.초기생성 1.멤버추가 2.멤버리스트 3.멤버찾기 4. 정보수정 5. 화면지우기 6.종료")
+
+
+def memberAdd() :
+    name = input("->NAME: ")
+    email = input("->EMAIL: ")
+    age = input("->AGE: ")
+
+    data = {
+        'name' : name,
+        'email' : email,
+        'age' : age
+    }
+    db = mydbConn()
+    db.member.insert_one(data)
+    print('{0},{1},{2} insert! '.format(name, email, age))
+
+def memberAllList():
+    db = mydbConn()
+    print('NAME\tEMAIL\tAGE')
+    for member in db['member'].find():
+        print('{0}\t{1}\t{2}'.format(member['name'], member['email'], member['age']))
+   
+
+def memberSearch():
+    name = input("Name you want to find: ")
+    db = mydbConn()
+    
+    print(db.member.find_one({'name':name}))
+
+def memberModify():
+    name = input("Name you want to find: ")
+    db = mydbConn()
+
+    if db.member.find_one({'name':name}):
+        email = input("Email To Edit:  ")
+        age = input("Age To Edit:  ")
+
+        db.member.update_one(
+            {'name':name },
+            {'$set':{'email':email, 'age':age}}
+        )
+    else:
+        print('Member Empty!')
+
+# def memberModify():
+#     search_name = input("Name you want to find: ")
+#     count = 0
+
+#     db = mydbConn()
+#     result = db.member.find({"name" : search_name})
+#     for mem in result:
+#         print(mem)
+#         count += 1
+        
+#     if (count > 0):
+#         new_email = input("Email To Edit:  ")
+#         new_age = input("Age To Edit:  ")
+        
+#         db['member'].update(
+#         { 'name':search_name},
+#         { "$set":{'email': new_email, 'age' : new_age }} )  
+#     else:
+#         print('Member Empty')
+
+def createNodeInit():
+    data1 = {
+        'name' : 'GuSeoYeun', 'email' : 'gu@gmail.com', 'age' : '24'
+    }
+    data2 = {
+        'name' : 'Jang', 'email' : 'jang@kw.ac.kr', 'age' : '21'
+    }    
+    db = mydbConn()
+    db.member.insert_many( [data1, data2] )
+    print("초기 데이터 추가되었음.")
+    
+if __name__ == '__main__' :
+    while True:
+        screen()
+        choice = input("-> ")
+
+        if choice == '0':
+           createNodeInit()
+        elif choice == '1':
+            memberAdd()
+        elif choice == '2':
+            memberAllList()
+        elif choice == '3':
+            memberSearch()
+        elif choice == '4':
+            memberModify()
+        elif choice == "5" :
+            os.system("cls")
+        elif choice == '6':
+            sys.exit(1)
+
+# db.collection.findAndModify({
+#         query:<document>,
+#         sort:<document>,
+#         remove:<boolean>,
+#         update:<document>,
+#         new:<boolean>,
+#         fields:<document>,
+#         upsert:<boolean>,
+#         bypassDocumentValidation:<boolean>,
+#         writeConcern:<document>,
+#         collation:<document>
+# });
